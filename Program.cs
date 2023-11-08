@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using CartWebApi.Data;
 
 namespace CartWebApi
 {
@@ -8,6 +11,14 @@ namespace CartWebApi
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            builder.Services.AddDbContext<ApiDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("Database"))
+             );
+
+            builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+                .AddEntityFrameworkStores<ApiDbContext>()
+                .AddDefaultTokenProviders();
+
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
