@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+ï»¿using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using CartWebApi.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.FileProviders;
 
 namespace CartWebApi
 {
@@ -38,39 +39,51 @@ namespace CartWebApi
             })
               .AddJwtBearer(options =>
               {
-                  // ·íÅçÃÒ¥¢±Ñ®É¡A¦^À³¼ĞÀY·|¥]§t WWW-Authenticate ¼ĞÀY¡A³o¸Ì·|Åã¥Ü¥¢±Ñªº¸Ô²Ó¿ù»~­ì¦]
-                  options.IncludeErrorDetails = true; // ¹w³]­È¬° true¡A¦³®É·|¯S§OÃö³¬
+                  // ç•¶é©—è­‰å¤±æ•—æ™‚ï¼Œå›æ‡‰æ¨™é ­æœƒåŒ…å« WWW-Authenticate æ¨™é ­ï¼Œé€™è£¡æœƒé¡¯ç¤ºå¤±æ•—çš„è©³ç´°éŒ¯èª¤åŸå› 
+                  options.IncludeErrorDetails = true; // é è¨­å€¼ç‚º trueï¼Œæœ‰æ™‚æœƒç‰¹åˆ¥é—œé–‰
 
                   options.TokenValidationParameters = new TokenValidationParameters
                   {
-                      // ³z¹L³o¶µ«Å§i¡A´N¥i¥H±q "NAME" ¨ú­È
+                      // é€éé€™é …å®£å‘Šï¼Œå°±å¯ä»¥å¾ "NAME" å–å€¼
                       NameClaimType = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
-                      // ³z¹L³o¶µ«Å§i¡A´N¥i¥H±q "Role" ¨ú­È¡A¨Ã¥iÅı [Authorize] §PÂ_¨¤¦â
+                      // é€éé€™é …å®£å‘Šï¼Œå°±å¯ä»¥å¾ "Role" å–å€¼ï¼Œä¸¦å¯è®“ [Authorize] åˆ¤æ–·è§’è‰²
                       RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
 
-                      // ÅçÃÒ Issuer (¤@¯ë³£·|)
+                      // é©—è­‰ Issuer (ä¸€èˆ¬éƒ½æœƒ)
                       ValidateIssuer = true,
                       ValidIssuer = _configuration.GetValue<string>("JwtSettings:ValidIssuer"),
 
-                      // ÅçÃÒ Audience (³q±`¤£¤Ó»İ­n)
+                      // é©—è­‰ Audience (é€šå¸¸ä¸å¤ªéœ€è¦)
                       ValidateAudience = false,
                       //ValidAudience = = _configuration.GetValue<string>("JwtSettings:ValidAudience"),
 
-                      // ÅçÃÒ Token ªº¦³®Ä´Á¶¡ (¤@¯ë³£·|)
+                      // é©—è­‰ Token çš„æœ‰æ•ˆæœŸé–“ (ä¸€èˆ¬éƒ½æœƒ)
                       ValidateLifetime = true,
 
-                      // ¦pªG Token ¤¤¥]§t key ¤~»İ­nÅçÃÒ¡A¤@¯ë³£¥u¦³Ã±³¹¦Ó¤w
+                      // å¦‚æœ Token ä¸­åŒ…å« key æ‰éœ€è¦é©—è­‰ï¼Œä¸€èˆ¬éƒ½åªæœ‰ç°½ç« è€Œå·²
                       ValidateIssuerSigningKey = false,
 
-                      // À³¸Ó±q IConfiguration ¨ú±o
+                      // æ‡‰è©²å¾ IConfiguration å–å¾—
                       IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
                   };
               });
-        
+            
+            //CORS
+            var allOrigins = "allowAll";
+            builder.Services.AddCors(option =>
+                option.AddPolicy(name: allOrigins,
+                    policy =>
+                    {
+                        policy.WithOrigins("http://localhost:5173").AllowAnyMethod().AllowAnyHeader();
+                    }
+                )
+            );
+
+
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen(c =>   // Swagger ´ú¸Õºô­¶¶}±Ò Token ªº¥\¯à
+            builder.Services.AddSwaggerGen(c =>   // Swagger æ¸¬è©¦ç¶²é é–‹å•Ÿ Token çš„åŠŸèƒ½
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "JwtDemo", Version = "v1" });
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -101,9 +114,17 @@ namespace CartWebApi
                 app.UseSwaggerUI();
             }
 
+            app.UseCors(allOrigins);
             app.UseAuthorization();
             app.UseAuthentication();
- 
+            app.UseStaticFiles();
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(
+                Path.Combine(builder.Environment.ContentRootPath, "StaticFiles")),
+                RequestPath = "/StaticFiles"
+            });
+
 
             app.MapControllers();
 
