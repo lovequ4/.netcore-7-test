@@ -38,13 +38,16 @@ namespace CartWebApi.Controllers
 
                 var claims = new List<Claim>    //建立 claims 清單，它將包含在 JWT 中的聲明。聲明是關於用戶的屬性
                 {
-                    new Claim(ClaimTypes.Name, user.UserName),
+                    new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
+                    new Claim(JwtRegisteredClaimNames.NameId, user.Id),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 };
 
+                const string CustomClaimTypeRole = "role";
+
                 foreach (var userRole in userRoles)
                 {
-                    claims.Add(new Claim(ClaimTypes.Role, userRole));  //迴圈將這些角色添加為JWT的聲明
+                    claims.Add(new Claim(CustomClaimTypeRole, userRole));  //迴圈將這些角色添加為JWT的聲明
                 }
 
                 var token = CreateToken(claims);
